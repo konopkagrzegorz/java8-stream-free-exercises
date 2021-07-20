@@ -6,9 +6,12 @@ import pl.klolo.workshops.mock.HoldingMockGenerator;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class WorkShop {
@@ -28,14 +31,14 @@ class WorkShop {
      * Metoda zwraca liczbę holdingów w których jest przynajmniej jedna firma.
      */
     long getHoldingsWhereAreCompanies() {
-        return -1;
+        return holdings.stream().filter(holding -> holding.getCompanies().isEmpty()).count();
     }
 
     /**
      * Zwraca nazwy wszystkich holdingów pisane z małej litery w formie listy.
      */
     List<String> getHoldingNames() {
-        return null;
+        return holdings.stream().map(holding -> holding.getName().toLowerCase()).collect(Collectors.toList());
     }
 
     /**
@@ -43,21 +46,21 @@ class WorkShop {
      * String ma postać: (Coca-Cola, Nestle, Pepsico)
      */
     String getHoldingNamesAsString() {
-        return null;
+        return holdings.stream().map(Holding::getName).collect(Collectors.joining(", ","(",")"));
     }
 
     /**
      * Zwraca liczbę firm we wszystkich holdingach.
      */
     long getCompaniesAmount() {
-        return -1;
+        return holdings.stream().map(Holding::getCompanies).count();
     }
 
     /**
      * Zwraca liczbę wszystkich pracowników we wszystkich firmach.
      */
     long getAllUserAmount() {
-        return -1;
+        return holdings.stream().flatMap(holding -> holding.getCompanies().stream().map(company -> company.getUsers().size())).count();
     }
 
     /**
@@ -65,7 +68,8 @@ class WorkShop {
      * później będziesz wykorzystywać.
      */
     List<String> getAllCompaniesNames() {
-        return null;
+        List<String> companies = holdings.stream().flatMap(holding -> holding.getCompanies().stream().map(company -> company.getName())).collect(Collectors.toList());
+        return companies;
     }
 
     /**
@@ -73,14 +77,17 @@ class WorkShop {
      * po zakończeniu działania strumienia.
      */
     LinkedList<String> getAllCompaniesNamesAsLinkedList() {
-        return null;
+        LinkedList<String> companies = holdings.stream().flatMap(holding -> holding.getCompanies()
+                .stream().map(company -> company.getName())).collect(Collectors.toCollection(LinkedList::new));
+        return companies;
     }
 
     /**
      * Zwraca listę firm jako string gdzie poszczególne firmy są oddzielone od siebie znakiem "+"
      */
     String getAllCompaniesNamesAsString() {
-        return null;
+        return holdings.stream().flatMap(holding -> holding.getCompanies().stream())
+                .map(company -> company.getName()).collect(Collectors.joining("+"));
     }
 
     /**
@@ -90,14 +97,23 @@ class WorkShop {
      * UWAGA: Zadanie z gwiazdką. Nie używamy zmiennych.
      */
     String getAllCompaniesNamesAsStringUsingStringBuilder() {
-        return null;
+        AtomicBoolean first = new AtomicBoolean(false);
+        return holdings.stream().flatMap(holding -> holding.getCompanies().stream())
+                .map(company -> company.getName()).collect((Collector.of(StringBuilder::new,
+                        (stringBuilder, s) -> {
+                            if (first.getAndSet(true)) stringBuilder.append("+");
+                            stringBuilder.append(s);
+                        },
+                        StringBuilder::append,
+                        StringBuilder::toString)));
     }
 
     /**
      * Zwraca liczbę wszystkich rachunków, użytkowników we wszystkich firmach.
      */
     long getAllUserAccountsAmount() {
-        return -1;
+        return holdings.stream().flatMap(holding -> holding.getCompanies().stream())
+                .flatMap(company -> company.getUsers().stream()).mapToInt(user -> user.getAccounts().size()).sum();
     }
 
     /**
